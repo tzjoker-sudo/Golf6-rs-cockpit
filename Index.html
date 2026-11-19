@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08090d">
+<title>Golf 6 RS Cockpit</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#08090d;color:white;font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid #30333d}
+.logo{font-size:24px;font-weight:900;letter-spacing:3px}
+.logo span{color:#ff3048}
+.status{font-size:10px;color:#ff6878}
+main{max-width:1100px;margin:auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+h2{font-size:13px;letter-spacing:2px;color:#b9bdc8}
+.demo{border:1px solid #87303d;color:#ff7180;padding:7px 11px;border-radius:20px;font-size:10px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.gauge{background:radial-gradient(circle at 50% 35%,#292d39,#11141c 72%);border:1px solid #393e4b;border-radius:18px;padding:12px 8px 14px;text-align:center;box-shadow:0 8px 24px #0008}
+.name{font-size:10px;font-weight:bold;letter-spacing:1.4px;color:#d4d7df;margin:4px 0}
+.dial{width:100%;max-width:230px;display:block;margin:auto}
+.track{fill:none;stroke:#414653;stroke-width:8;stroke-linecap:round}
+.arc{fill:none;stroke:#ff3048;stroke-width:8;stroke-linecap:round}
+.tick{stroke:#aab0bd;stroke-width:1.5}
+.needle{stroke:#ff344a;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 4px #ff263e)}
+.hub{fill:#ff344a;stroke:#171922;stroke-width:3}
+.value{fill:white;font-size:25px;font-weight:bold;text-anchor:middle}
+.unit{fill:#aeb4c1;font-size:10px;text-anchor:middle;letter-spacing:1.5px}
+.scale{fill:#9299a8;font-size:9px;text-anchor:middle}
+footer{text-align:center;color:#9298a5;font-size:10px;padding:18px;border-top:1px solid #292c35;margin-top:18px;line-height:1.8}
+@media(max-width:650px){.grid{grid-template-columns:repeat(2,1fr);gap:10px}header{padding:14px}.logo{font-size:20px}}
+@media(min-width:900px){.gauge{padding:18px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">GOLF <span>6 RS</span></div>
+ <div class="status">● COCKPIT ONLINE</div>
+</header>
+<main>
+ <div class="top">
+  <h2>PERFORMANCE MONITOR</h2>
+  <div class="demo">DEMO-MODUS</div>
+ </div>
+ <div class="grid" id="gauges"></div>
+</main>
+<footer>
+ GOLF 6 · CUSTOM DIGITAL DASHBOARD<br>
+ DEMO-WERTE · NOCH KEINE ECHTE OBD-VERBINDUNG
+</footer>
+<script>
+const instruments=[
+ {name:"TURBODRUCK",value:0.8,unit:"bar",min:-1,max:2,dec:1},
+ {name:"ÖLTEMPERATUR",value:96,unit:"°C",min:50,max:160,dec:0},
+ {name:"KÜHLMITTEL",value:90,unit:"°C",min:40,max:130,dec:0},
+ {name:"DREHZAHL",value:2500,unit:"U/min",min:0,max:7000,dec:0},
+ {name:"BATTERIE",value:14.2,unit:"V",min:10,max:16,dec:1},
+ {name:"ANSAUGLUFT",value:32,unit:"°C",min:-10,max:80,dec:0}
+];
+
+const startAngle=135;
+const sweep=270;
+
+function point(cx,cy,r,angle){
+ const a=angle*Math.PI/180;
+ return [cx+Math.cos(a)*r,cy+Math.sin(a)*r];
+}
+
+function makeGauge(item){
+ const p=Math.max(0,Math.min(1,(item.value-item.min)/(item.max-item.min)));
+ const angle=startAngle+sweep*p;
+ const [nx,ny]=point(120,120,68,angle);
+ const [ax,ay]=point(120,120,92,startAngle);
+ const [bx,by]=point(120,120,92,startAngle+sweep);
+ let ticks="";
+ for(let n=0;n<=20;n++){
+  const a=startAngle+sweep*n/20;
+  const [x1,y1]=point(120,120,90,a);
+  const [x2,y2]=point(120,120,n%5===0?78:84,a);
+  ticks+=`<line class="tick" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+ }
+ return `
+ <section class="gauge">
+  <div class="name">${item.name}</div>
+  <svg class="dial" viewBox="0 0 240 240" role="img" aria-label="${item.name}">
+   <path class="track" d="M ${ax} ${ay} A 92 92 0 1 1 ${bx} ${by}"/>
+   ${ticks}
+   <path class="arc" d="M ${ax} ${ay} A 92 92 0 1 1 ${bx} ${by}"
+    stroke-dasharray="${289*p} 289"/>
+   <line class="needle" x1="120" y1="120" x2="${nx}" y2="${ny}"/>
+   <circle class="hub" cx="120" cy="120" r="7"/>
+   <text class="value" x="120" y="151">${item.value.toFixed(item.dec)}</text>
+   <text class="unit" x="120" y="169">${item.unit}</text>
+   <text class="scale" x="38" y="198">${item.min}</text>
+   <text class="scale" x="202" y="198">${item.max}</text>
+  </svg>
+ </section>`;
+}
+
+document.getElementById("gauges").innerHTML=
+ instruments.map(makeGauge).join("");
+</script>
+</body>
+</html>
